@@ -1,5 +1,5 @@
 ---
-title: Testing Sites Not Served from Root with --base-url
+title: Checking a Local Directory of Website Files with --base-url
 description: Understanding how to use the --base-url parameter in lychee
 ---
 
@@ -9,19 +9,30 @@ export const fileLang = "html";
 
 ## What Is The Base URL?
 
-The `--base-url` parameter in lychee lets you check links for sites that aren't
-served from the root domain. This is useful when your site lives in a
-subdirectory, like `example.com/docs/`.
+The `--base-url` parameter, in conjunction with the `--root-dir` parameter,
+informs Lychee that the local root dir is meant to be uploaded to the remote
+base URL. If a base URL is given, Lychee will configure itself to check that
+all links will be valid when the files are eventually uploaded.
+
+This is most useful for checking a directory of static website files, possibly
+produced by a static site generator or documentation generator.
 
 ## Do You Need To Set A Base URL?
 
-Most of the time, you don't! Skip `--base-url` if:
+Most of the time, you don't! You **can skip** `--base-url` in these scenarios:
 
-- Your site runs at a root domain (like `example.com`)
-- You're only checking absolute URLs
-- Your links should resolve relative to their files
+- Your site runs at a root domain like `example.com` (in this case, you may
+  still need `--root-dir` if you have root-relative links)
+- You're only checking fully-qualified URLs (e.g., every link begins with `https://`)
+- You only have file-relative and not root-relative links (e.g., relative links begin with `..` or a filename and do _not_ begin with `/`)
 
-You need `--base-url` when your site lives in a subdirectory.
+You **will need** `--base-url` in these situations:
+
+- If your site will be hosted in a subdirectory uses relative or root-relative
+  links, a base URL is needed to resolve these correctly.
+- If your site will be hosted to a web address and your local files have links
+  mentioning that web address, then a base URL lets Lychee resolve those links
+  to local files rather than the current online version of the website.
 
 Let's look at an example:
 
@@ -49,32 +60,47 @@ The `--base-url` parameter works similarly to other tools you might know:
 - [Jekyll's `baseurl`](https://jekyllrb.com/docs/configuration/options/)
 - [Vite's `base` config](https://vike.dev/base-url#base)
 - [Hugo's `baseURL`](https://gohugo.io/methods/site/baseurl/)
-- [The HTML `<base>` tag](https://www.w3schools.com/tags/tag_base.asp)
 
 If you've used any of these, lychee's `--base-url` follows the same concept.
+Generally, if you specify a base URL in a static site generator, you should
+pass the same base URL to Lychee.
 :::
 
 ## How Does It Work?
 
-When you set `--base-url`, lychee will:
+When you set `--base-url`, lychee will resolve all links _as if_ the local root directory
+was hosted at the remote base URL.
 
-1. Find all links in your HTML files
-2. Convert relative links to full URLs
-3. Check if the referenced files exist in your project
+This is done by virtually "splicing" the root-dir onto the base-url path. This
+works in both directions: (1) links to subpaths of the base URL will be
+resolved to local files within the root directory, with consideration to the
+relative subpath, and (2) links originating from local files which traverse
+outside of base URL will resolve to remote URLs on the internet.
+
+The two directions are demonstrated in the examples below. For these examples,
+suppose a base URL of `https://example.com/dir/` and root dir of `/tmp/root`.
+
+- (1) A link to `https://example.com/dir/sub/boop.html` will be resolved to
+  the local file `/tmp/root/sub/boop.html` because it is a subpath of base URL.
+  The relative subpath of `/sub/boop.html` is mapped into the root dir.
+
+- (2) A link in `/tmp/root/index.html` to `../up.html` or `/up.html` will be
+  resolved to the remote URL `https://example.com/up.html` because it traverses
+  outside of base URL.
 
 Here's what happens to different types of links:
 
 <Code
-  code={`<!-- Original links -->
-<a href="./guide.html">Guide</a>
-<a href="../about.html">About</a>
-<a href="https://other.com">External</a>
+  code={`<!-- Original links in /tmp/project/index.html -->
+<a href="https://example.com/docs/ref/guide.html">Guide</a>
+<a href="/home">Home</a>
+<a href="search.html">Search</a>
 
-<!-- After --base-url https://example.com/docs/ -->
+<!-- After --base-url https://example.com/docs/ --root-dir /tmp -->
 
-<a href="https://example.com/docs/guide.html">Guide</a>
-<a href="https://example.com/about.html">About</a>
-<a href="https://other.com">External</a>`} lang={fileLang}
+<a href="file:///tmp/ref/guide.html">Guide</a>
+<a href="https://example.com/home">Home</a>
+<a href="file:///tmp/project/search.html">External</a>`} lang={fileLang}
 title="Link Resolution Example" />
 
 ## Common Use Cases

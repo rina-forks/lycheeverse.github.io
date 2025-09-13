@@ -59,12 +59,16 @@ export default defineConfig({
               link: "/recipes/migration",
             },
             {
-              label: "Testing Sites Not Served from Root with --base-url",
+              label: "Checking a Local Directory of Website Files with --base-url",
               link: "/recipes/base-url",
             },
             {
               label: "Local File Checking with --root-dir",
               link: "/recipes/root-dir",
+            },
+            {
+              label: "Resolving Local Directory Links to Index Files",
+              link: "/recipes/index-files",
             },
             { label: "Pretty URLs", link: "/recipes/pretty-urls" },
             { label: "Wikilinks", link: "/recipes/wikilinks" },
